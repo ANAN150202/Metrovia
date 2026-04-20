@@ -1,0 +1,244 @@
+/* Global styles + Tailwind CSS directives */
+/* ─────────────────────────────────────────────────────────────
+   CampusConnect — Global Styles
+   Design: Premium dark/light hybrid (Stripe + Linear inspired)
+───────────────────────────────────────────────────────────── */
+
+/* ── Google Fonts ────────────────────────────────────────────
+   DM Sans  — clean, modern body font
+   Syne     — distinctive display font for headings
+   JetBrains Mono — for code/mono elements
+──────────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap");
+
+/* ── Tailwind Directives ─────────────────────────────────────
+   These three lines are required — they inject Tailwind's
+   base reset, component classes, and utility classes
+──────────────────────────────────────────────────────────── */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Variables ───────────────────────────────────────────
+   Centralized design tokens for consistent theming
+   Accessible via var(--color-bg) etc. in custom CSS
+──────────────────────────────────────────────────────────── */
+:root {
+  /* Light mode defaults */
+  --color-bg:          #FFFFFF;
+  --color-card:        #F9FAFB;
+  --color-panel:       #F3F4F6;
+  --color-border:      #E5E7EB;
+  --color-text:        #111827;
+  --color-text-muted:  #6B7280;
+  --color-accent:      #6366f1;
+  --color-accent-deep: #4f46e5;
+}
+
+/* Dark mode overrides — activated when .dark is on <html> */
+.dark {
+  --color-bg:          #0F0F0F;
+  --color-card:        #1A1A1A;
+  --color-panel:       #171717;
+  --color-border:      #2A2A2A;
+  --color-text:        #F9FAFB;
+  --color-text-muted:  #9CA3AF;
+  --color-accent:      #818cf8;
+  --color-accent-deep: #6366f1;
+}
+
+/* ── Base Styles ─────────────────────────────────────────────
+   Applied to every element via Tailwind's @layer base
+──────────────────────────────────────────────────────────── */
+@layer base {
+  /* Smooth scrolling throughout the app */
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Default body: light mode background + text */
+  body {
+    @apply bg-white text-gray-900 font-sans;
+    @apply dark:bg-[#0F0F0F] dark:text-gray-100;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Heading hierarchy using display font */
+  h1, h2, h3 {
+    font-family: "Syne", "DM Sans", sans-serif;
+    @apply font-bold tracking-tight;
+  }
+
+  h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  /* Smooth focus rings — accessibility + premium feel */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2;
+    @apply dark:ring-offset-[#0F0F0F];
+  }
+
+  /* Remove default button/input styles */
+  button {
+    @apply cursor-pointer;
+  }
+
+  /* Custom scrollbar — thin, premium look */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-dark-muted rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-600;
+  }
+}
+
+/* ── Reusable Component Classes ──────────────────────────────
+   Use @apply to build utility shortcuts
+   Usage: className="card" / className="btn-primary" etc.
+──────────────────────────────────────────────────────────── */
+@layer components {
+
+  /* ── Cards ──────────────────────────────────────────────── */
+  .card {
+    @apply bg-white dark:bg-dark-card;
+    @apply border border-light-border dark:border-dark-border;
+    @apply rounded-2xl shadow-card-light dark:shadow-card-dark;
+    @apply transition-all duration-250;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-card-hover hover:-translate-y-0.5;
+  }
+
+  /* ── Buttons ────────────────────────────────────────────── */
+  /* Primary: gradient brand button */
+  .btn-primary {
+    @apply bg-gradient-brand text-white font-semibold;
+    @apply px-5 py-2.5 rounded-xl;
+    @apply hover:opacity-90 active:scale-95;
+    @apply transition-all duration-200;
+    @apply shadow-glow-sm hover:shadow-glow-md;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary: outlined button */
+  .btn-secondary {
+    @apply bg-transparent text-gray-700 dark:text-gray-300;
+    @apply border border-light-border dark:border-dark-border;
+    @apply px-5 py-2.5 rounded-xl font-medium;
+    @apply hover:bg-light-hover dark:hover:bg-dark-hover;
+    @apply transition-all duration-200;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Ghost: minimal, no border */
+  .btn-ghost {
+    @apply bg-transparent text-gray-600 dark:text-gray-400;
+    @apply px-4 py-2 rounded-lg font-medium;
+    @apply hover:bg-light-panel dark:hover:bg-dark-panel;
+    @apply transition-all duration-200;
+  }
+
+  /* ── Form Inputs ─────────────────────────────────────────── */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl;
+    @apply bg-light-card dark:bg-dark-card;
+    @apply border border-light-border dark:border-dark-border;
+    @apply text-gray-900 dark:text-gray-100;
+    @apply placeholder-gray-400 dark:placeholder-gray-600;
+    @apply focus:outline-none focus:ring-2 focus:ring-brand-500;
+    @apply focus:border-brand-500 dark:focus:border-brand-400;
+    @apply transition-all duration-200;
+    @apply text-sm;
+  }
+
+  /* ── Sidebar & Panel ─────────────────────────────────────── */
+  .sidebar {
+    @apply bg-white dark:bg-dark-panel;
+    @apply border-r border-light-border dark:border-dark-border;
+  }
+
+  /* ── Dividers ────────────────────────────────────────────── */
+  .divider {
+    @apply border-t border-light-border dark:border-dark-border;
+  }
+
+  /* ── Badge ───────────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full;
+    @apply text-xs font-medium;
+  }
+
+  .badge-brand {
+    @apply badge bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300;
+  }
+
+  /* ── Avatar ──────────────────────────────────────────────── */
+  .avatar {
+    @apply rounded-full object-cover ring-2 ring-white dark:ring-dark-card;
+  }
+
+  /* ── Gradient Text ───────────────────────────────────────── */
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-500 to-violet-500 bg-clip-text text-transparent;
+  }
+
+  /* ── Glass effect (for modals/dropdowns) ─────────────────── */
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    @apply bg-white/80 dark:bg-dark-card/80;
+    @apply border border-white/20 dark:border-dark-border;
+  }
+}
+
+/* ── Utility Layer Extras ────────────────────────────────────
+   One-off utilities not in Tailwind by default
+──────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Shimmer loading skeleton animation */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #f0f0f0 25%,
+      #e0e0e0 50%,
+      #f0f0f0 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  .dark .skeleton {
+    background: linear-gradient(
+      90deg,
+      #2a2a2a 25%,
+      #333333 50%,
+      #2a2a2a 75%
+    );
+    background-size: 200% 100%;
+  }
+
+  /* Hide scrollbar but keep scroll functionality */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Text balance for headings */
+  .text-balance {
+    text-wrap: balance;
+  }
+}

@@ -1,0 +1,7 @@
+node_modules/
+.env
+uploads/images/*
+uploads/pdfs/routine/*
+uploads/pdfs/result/*
+uploads/pdfs/seatplan/*
+!uploads/**/.gitkeep
