@@ -2,23 +2,6 @@ import Spinner from "../common/Spinner";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-// ─────────────────────────────────────────────────────────────
-// Transforms a Cloudinary raw URL to force inline display
-// Without this, Cloudinary serves PDFs as downloads
-// ─────────────────────────────────────────────────────────────
-const getInlinePdfUrl = (url) => {
-  if (!url) return url;
-
-  // For Cloudinary raw URLs, insert fl_attachment:false transformation
-  // Before: https://res.cloudinary.com/xxx/raw/upload/metrovia/pdfs/...
-  // After:  https://res.cloudinary.com/xxx/raw/upload/fl_attachment:false/metrovia/pdfs/...
-  if (url.includes("cloudinary.com") && url.includes("/raw/upload/")) {
-    return url.replace("/raw/upload/", "/raw/upload/fl_attachment:false/");
-  }
-
-  return url;
-};
-
 const PDFViewer = ({ fileUrl, loading, error }) => {
   if (loading) {
     return (
@@ -46,14 +29,16 @@ const PDFViewer = ({ fileUrl, loading, error }) => {
     );
   }
 
-  // Build full URL and apply inline transformation
-  const rawUrl    = fileUrl.startsWith("http") ? fileUrl : `${BASE_URL}${fileUrl}`;
-  const inlineUrl = getInlinePdfUrl(rawUrl);
+  const rawUrl = fileUrl.startsWith("http") ? fileUrl : `${BASE_URL}${fileUrl}`;
+
+  // Use Google Docs Viewer to embed PDF inline
+  // This works for any publicly accessible PDF URL including Cloudinary
+  const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true`;
 
   return (
     <div className="card overflow-hidden">
       <iframe
-        src={inlineUrl}
+        src={googleViewerUrl}
         title="PDF Viewer"
         className="w-full"
         style={{ height: "80vh", border: "none" }}
