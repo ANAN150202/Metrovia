@@ -1,30 +1,25 @@
 const Post    = require("../models/Post");
 const Comment = require("../models/Comment");
 const Page    = require("../models/Page");
-const fs      = require("fs");
-const path    = require("path");
+const { cloudinary } = require("../middleware/uploadMiddleware");
 
-// Populate helper
 const populatePost = (query) =>
   query
     .populate("author", "name avatar role department")
     .populate("postedAs", "name avatar")
-    .populate({
-      path: "comments",
-      populate: { path: "author", select: "name avatar" },
-    });
+    .populate({ path: "comments", populate: { path: "author", select: "name avatar" } });
 
-// @route POST /api/posts
+// POST /api/posts
 const createPost = async (req, res) => {
   try {
     const { text } = req.body;
     if (!text && !req.file) {
       return res.status(400).json({ message: "Post must have text or an image." });
     }
-    const post      = await Post.create({
+    const post = await Post.create({
       author: req.user._id,
       text:   text || "",
-      image:  req.file ? req.file.filename : "",
+      image:  req.file ? req.file.path : "", // Cloudinary URL
     });
     const populated = await populatePost(Post.findById(post._id));
     res.status(201).json({ message: "Post created successfully.", post: populated });
@@ -33,7 +28,7 @@ const createPost = async (req, res) => {
   }
 };
 
-// @route GET /api/posts
+// GET /api/posts
 const getAllPosts = async (req, res) => {
   try {
     const posts = await populatePost(Post.find().sort({ createdAt: -1 }));
@@ -43,7 +38,7 @@ const getAllPosts = async (req, res) => {
   }
 };
 
-// @route GET /api/posts/user/:id
+// GET /api/posts/user/:id
 const getPostsByUser = async (req, res) => {
   try {
     const posts = await populatePost(
@@ -55,22 +50,18 @@ const getPostsByUser = async (req, res) => {
   }
 };
 
-// @route PUT /api/posts/:id
-// Author OR page owner can edit a page post
+// PUT /api/posts/:id
 const updatePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found." });
 
-    const isAuthor = post.author.toString() === req.user._id.toString();
-
-    // If it's a page post, also allow the page owner to edit
-    let isPageOwner = false;
+    const isAuthor    = post.author.toString() === req.user._id.toString();
+    let   isPageOwner = false;
     if (post.page) {
       const page = await Page.findById(post.page);
       isPageOwner = page?.owner.toString() === req.user._id.toString();
     }
-
     if (!isAuthor && !isPageOwner) {
       return res.status(403).json({ message: "You can only edit your own posts." });
     }
@@ -84,30 +75,29 @@ const updatePost = async (req, res) => {
   }
 };
 
-// @route DELETE /api/posts/:id
-// Author OR page owner can delete a page post
+// DELETE /api/posts/:id
 const deletePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found." });
 
-    const isAuthor = post.author.toString() === req.user._id.toString();
-
-    // If it's a page post, also allow the page owner to delete
-    let isPageOwner = false;
+    const isAuthor    = post.author.toString() === req.user._id.toString();
+    let   isPageOwner = false;
     if (post.page) {
       const page = await Page.findById(post.page);
       isPageOwner = page?.owner.toString() === req.user._id.toString();
     }
-
     if (!isAuthor && !isPageOwner) {
       return res.status(403).json({ message: "You can only delete your own posts." });
     }
 
-    if (post.image) {
-      const imagePath = path.join(__dirname, "../uploads/images", post.image);
-      if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+    // Delete image from Cloudinary if it exists
+    if (post.image && post.image.includes("cloudinary")) {
+      const parts = post.image.split("/");
+      const pubId = parts.slice(-2).join("/").split(".")[0];
+      await cloudinary.uploader.destroy(pubId).catch(() => {});
     }
+
     await Comment.deleteMany({ post: post._id });
     await post.deleteOne();
     res.status(200).json({ message: "Post deleted successfully." });

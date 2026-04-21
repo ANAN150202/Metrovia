@@ -1,84 +1,59 @@
-// Multer configuration for image and PDF uploads
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const multer = require("multer");
-const path = require("path");
 
-// ─── Allowed file types ───────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// Cloudinary configuration
+// Credentials come from environment variables
+// ─────────────────────────────────────────────────────────────
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const PDF_TYPES   = ["application/pdf"];
-
-// ─── Storage config for profile/post images ──────────────────────────────────
-
-const imageStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../uploads/images"));
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, uniqueName);
+// ─── Image storage ────────────────────────────────────────────
+const imageStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder:          "metrovia/images",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    transformation:  [{ width: 1200, crop: "limit" }],
   },
 });
 
-// ─── Storage config for academic PDFs ────────────────────────────────────────
-// IMPORTANT: req.body is NOT reliable inside multer diskStorage callbacks when
-// using multipart/form-data — multer hasn't finished parsing body fields yet.
-// Solution: use req.pdfType which is set directly on the req object by the
-// route middleware BEFORE multer runs. Properties set on req are always
-// available inside multer callbacks.
-
-const pdfStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // req.pdfType is set in adminRoutes.js before this runs
-    // e.g. (req, res, next) => { req.pdfType = "routine"; next(); }
-    const type = req.pdfType;
-
-    const validTypes = ["routine", "result", "seatplan"];
-    if (!validTypes.includes(type)) {
-      return cb(new Error("Invalid academic file type. Use routine, result, or seatplan."));
-    }
-
-    cb(null, path.join(__dirname, `../uploads/pdfs/${type}`));
-  },
-  filename: (req, file, cb) => {
-    const type = req.pdfType || "file";
-    const uniqueName = `${type}-${Date.now()}.pdf`;
-    cb(null, uniqueName);
-  },
+// ─── PDF storage ──────────────────────────────────────────────
+const pdfStorage = new CloudinaryStorage({
+  cloudinary,
+  params: (req) => ({
+    folder:          `metrovia/pdfs/${req.pdfType || "general"}`,
+    allowed_formats: ["pdf"],
+    resource_type:   "raw",
+    public_id:       `${req.pdfType || "file"}-${Date.now()}`,
+  }),
 });
 
-// ─── File filter for images ───────────────────────────────────────────────────
-
-const imageFileFilter = (req, file, cb) => {
-  if (IMAGE_TYPES.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Invalid image type. Only JPEG, PNG, and WEBP are allowed."), false);
-  }
+// ─── File filters ─────────────────────────────────────────────
+const imageFilter = (req, file, cb) => {
+  const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+  allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error("Only JPEG, PNG and WEBP allowed."), false);
 };
 
-// ─── File filter for PDFs ─────────────────────────────────────────────────────
-
-const pdfFileFilter = (req, file, cb) => {
-  if (PDF_TYPES.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Invalid file type. Only PDF files are allowed."), false);
-  }
+const pdfFilter = (req, file, cb) => {
+  file.mimetype === "application/pdf" ? cb(null, true) : cb(new Error("Only PDF files allowed."), false);
 };
 
-// ─── Multer instances ─────────────────────────────────────────────────────────
-
+// ─── Multer instances ─────────────────────────────────────────
 const uploadImage = multer({
-  storage: imageStorage,
-  fileFilter: imageFileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+  storage:    imageStorage,
+  fileFilter: imageFilter,
+  limits:     { fileSize: 5 * 1024 * 1024 },
 });
 
 const uploadPDF = multer({
-  storage: pdfStorage,
-  fileFilter: pdfFileFilter,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB max
+  storage:    pdfStorage,
+  fileFilter: pdfFilter,
+  limits:     { fileSize: 20 * 1024 * 1024 },
 });
 
-module.exports = { uploadImage, uploadPDF };
+module.exports = { uploadImage, uploadPDF, cloudinary };

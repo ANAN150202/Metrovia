@@ -141,7 +141,7 @@ const PostCard = ({ post, onDelete, pageOwnerId = null }) => {
       {post.image && (
         <div className="mb-3 rounded-xl overflow-hidden bg-light-panel dark:bg-dark-panel">
           <img
-            src={`${BASE_URL}/uploads/images/${post.image}`}
+            src={post.image?.startsWith("http") ? post.image : `${BASE_URL}/uploads/images/${post.image}`}
             alt="Post"
             className="w-full max-h-96 object-cover"
           />
