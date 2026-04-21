@@ -2,10 +2,6 @@ const cloudinary = require("cloudinary").v2;
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const multer = require("multer");
 
-// ─────────────────────────────────────────────────────────────
-// Cloudinary configuration
-// Credentials come from environment variables
-// ─────────────────────────────────────────────────────────────
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key:    process.env.CLOUDINARY_API_KEY,
@@ -23,6 +19,7 @@ const imageStorage = new CloudinaryStorage({
 });
 
 // ─── PDF storage ──────────────────────────────────────────────
+// Using resource_type "raw" but adding flags for inline display
 const pdfStorage = new CloudinaryStorage({
   cloudinary,
   params: (req) => ({
@@ -30,6 +27,8 @@ const pdfStorage = new CloudinaryStorage({
     allowed_formats: ["pdf"],
     resource_type:   "raw",
     public_id:       `${req.pdfType || "file"}-${Date.now()}`,
+    // fl_attachment=false tells Cloudinary to serve inline not as download
+    flags:           "attachment:false",
   }),
 });
 
